@@ -1,0 +1,62 @@
+#!/bin/sh
+# restrictions: columns >= 0, must have at least 1 argument
+execute() {
+    # create beginning of default HTML file
+    output="<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">"
+    output="$output\n<html>"
+    output="$output\n  <head>"
+    output="$output\n    <title>Pictures</title>"
+    output="$output\n  </head>"
+    output="$output\n  <body>"
+    output="$output\n    <h1>Pictures</hi>"
+    output="$output\n    <table>"
+
+    columns=$num
+    # run a while loop until the program shifts to the end of the parameters
+    # $1 will be used as the pointer to the 'current file'
+    for pic in "$@"
+    do
+        # if it doesn't point to null, check if the file is a JPEG image
+        filetype=`file "$pic" -b | cut -d " " -f 1`
+        if [ "$filetype" = "JPEG" ]
+        then
+            if [ $columns = $num ]; then
+                output="$output\n <tr>"
+            fi
+                output="$output\n\t <td><img src=\"$pic\" height=100></td>"
+                columns=`expr $columns - 1`
+            if [ $columns = 0 ]; then
+                output="$output\n </tr>"
+                columns=$num
+            fi
+        else
+            # print an error message to the user
+            echo "invalid: $pic is not an image" 1>&2
+        fi
+    done
+    # Finish with the default html output, and output to the shell
+    if [ $columns != $num ]; then
+        output="$output\n </tr>"
+    fi
+    output="$output\n    </table>"
+    output="$output\n  </body>\n</html>"
+    echo $output
+}
+
+num=$1 # create a variable for the number of desired columns
+
+if [ "$num" = "" ] # check if no arguments were passed
+then
+	# if so, print a guideline to the user
+	echo "correct format: \"$0 [num] [picture ...]\"" 1>&2
+else
+	# else check if the number of columns given is greate
+	if [ $num -ge 0 ] 2>errors.log
+	then
+		shift # shift to get the next parameter
+		execute "$@"
+	else
+		# if it isn't, print an error to the user, clear the arguments and the output
+		echo "error: number of columns should be an integer greater than 1" 1>&2
+	fi
+fi

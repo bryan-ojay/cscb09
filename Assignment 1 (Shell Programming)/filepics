@@ -1,0 +1,39 @@
+#!/bin/sh
+# restrictions: argument must be a directory, can only have 1 argument
+PATH="$PATH:/courses/courses/cscb09w19/bin" # adds the path to ensure the exiftime command is run
+
+execute() {
+	# check if the given argument is an existing directory
+        checkdir=`cd "$1" 2>&1`
+	if [ "$checkdir" != "" ]
+	then 
+		# if the argument is not am existing directory, print an error the user
+		echo "invalid: $1 is not an existing directory" 1>&2
+	else
+		for pic in "$1"/*  # analyze every file in the directory
+		do
+			data=`exiftime -tg -s ":" "$pic" 2>errors.log` # run the exiftime command to get the data
+			if [ "$data" != "" ] # check to see if the data was retrieved or if an error was returned
+			then
+                # if an error was not returned, run the commands for the JPEG file
+				yeardir=`echo $data | cut -d ":" -f 2`
+                monthdir=`echo $data | cut -d ":" -f 3`
+                # create a directory based on the year and month generated
+				dir1=`mkdir $yeardir 2>&1`
+				dir2=`mkdir $yeardir/$monthdir 2>&1`
+				mv "$pic" $yeardir/$monthdir
+			else
+                # if an error was returned, generate an error message to the user   
+			    echo "note: $pic is not a JPEG or has no data" 1>&2
+			fi
+		done
+	fi		
+}
+
+if [ "$1" = "" ] || [ "$2" != "" ]  # check if the arguments were passed incorrectly
+then
+	# if so, print a guideline to the user
+	echo "correct format: \"$0 [directory]\"" 1>&2
+else
+	execute "$1"
+fi

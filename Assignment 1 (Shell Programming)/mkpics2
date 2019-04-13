@@ -1,0 +1,111 @@
+#!/bin/sh
+#restrictions, can only have 2 arguments, first argument must be a number, second number must be a directory
+write_HTML() {
+    if [ "$1" = 0 ]
+    then
+        # create beginning of default HTML file
+        output="<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">"
+        output="$output\n<html>"
+        output="$output\n  <head>"
+        output="$output\n    <title>Pictures</title>"
+        output="$output\n  </head>"
+        output="$output\n  <body>"
+        output="$output\n    <h1>Pictures</hi>"
+    elif [ "$1" = 1 ]
+    then
+        # create end of default HTML file
+        output="$output\n  </body>\n</html>"
+    fi
+}
+
+make_tables() {
+    # if the directory exists, check for the yearly directories
+    for yeardir in "$1/"[1-2][0-9][0-9][0-9]
+    do
+        # create a variable for the given number of columns
+        columns=$num
+        # extract the year from the directory and create a heading based off of the year number
+        yearnum=`echo $yeardir | tail -c 5`
+        output="$output\n\n  <h2>$yearnum</h2>"
+        output="$output\n    <table>"
+
+        # check if the given year directory has 'month' sub-directories
+        checkmonths=`echo "$yeardir/"[0-1][0-9]`
+        if [ "$checkmonths" = "$yeardir/"'[0-1][0-9]' ]
+        then
+            # if it doesn't, generate an error message to the user
+            echo "note: $yeardir contains no valid 'month' directories" 1>&2
+        else
+            # if it does, loop through all the month directories
+            for monthdir in "$yeardir/"[0-1][0-9]
+            do
+                monthnum=`echo $monthdir | tail -c 3`
+                # check if the given month directory is valid
+                if [ "$monthnum" != "00" ] && [ "$monthnum" -le "12" ]
+                then
+                    for pic in "$monthdir/"*
+                    do
+                        # if it doesn't point to null, check if the file is a JPEG image
+                        filetype=`file "$pic" -b | cut -d " " -f 1`
+                        if [ "$filetype" = "JPEG" ]
+                        then
+                            # check if a new row needs to be opened
+                            if [ $columns = $num ]; then 
+                                output="$output\n <tr>"
+                            fi
+                                output="$output\n\t <td><img src=\"$pic\" height=100></td>"
+                                columns=`expr $columns - 1`
+                            # check if the row needs to be closed
+                            if [ $columns = 0 ]; then
+                                output="$output\n </tr>"
+                                columns=$num
+                            fi
+                        else
+                            # print an error message to the user
+                            echo "invalid: $pic is not an image" 1>&2
+                        fi
+                    done
+                else
+                    # else, notify the user
+                    echo "note: $monthdir is not a valid 'month' directory" 1>&2
+                fi
+            done
+            # check if the last row is incomplete
+            if [ $columns != $num ]; then
+                output="$output\n </tr>"
+            fi
+            output="$output\n    </table>"
+        fi
+    done
+}
+
+num=$1
+directory=$2
+output=""
+# check if the arguments were passed incorrectly
+if [ "$num" = "" ] || [ "$directory" = "" ] || [ "$3" != "" ]
+then
+	# if so, print a guideline to the user
+	echo "correct format: \"$0 [num] [directory]\"" 1>&2
+else
+    # else check if the number of columns given is a number greater than 0
+    if [ $num -ge 0 ] 2>errors.log
+    then
+        checkdir=`cd "$2" 2>&1` # create a variable to check if the given directory exists
+        checkyears=`echo "$2/"[1-2][0-9][0-9][0-9]` # create a variable to check if the given directory has 'year' sub-directories
+        if [ "$checkdir" != "" ] || [ "$checkyears" = "$2/"'[1-2][0-9][0-9][0-9]' ]
+        then 
+            # if the argument is not a valid directory, print an error the user
+            echo "invalid: $2 is nonexistent or contains no valid 'year' subdirectories" 1>&2
+        else
+            # else execute the program
+            write_HTML 0
+            make_tables "$2"
+            write_HTML 1
+            echo $output
+        fi
+    else
+        # if it isn't, print an error to the user
+        echo "error: number of columns should be an integer greater than 0" 1>&2
+    fi
+fi

@@ -1,0 +1,17 @@
+add_group group1
+add_user group1 ace
+add_user group1 bob
+add_user group1 cat
+add_xct group1 ace 10
+add_xct group1 bob 20
+add_xct group1 cat 30.56
+add_xct group1 ace 40
+add_xct group1 ace 90
+list_users group1 
+remove_user group1 ace
+recent_xct group1 5
+remove_user group1 bob
+add_xct group1 cat 50
+recent_xct group1 5
+remove_user group1 cat
+quit
